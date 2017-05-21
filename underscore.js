@@ -241,6 +241,8 @@
     if (key !== void 0 && key !== -1) return obj[key];
   };
 
+  /* 第一天结束 */
+
   // Return all the elements that pass a truth test.
   // Aliased as `select`.
   _.filter = _.select = function(obj, predicate, context) {
@@ -484,6 +486,8 @@
   _.partition = group(function(result, value, pass) {
     result[pass ? 0 : 1].push(value);
   }, true);
+
+  /* 第二天结束 */
 
   // Array Functions
   // ---------------
@@ -732,6 +736,8 @@
 
     return range;
   };
+
+  /* 第三天结束 */
 
   // Split an **array** into several arrays containing **count** or less elements
   // of initial array.
@@ -984,6 +990,8 @@
       }
     }
   };
+
+  /* 第四天结束 */
 
   // Retrieve the names of an object's own properties.
   // Delegates to **ECMAScript 5**'s native `Object.keys`.
@@ -1285,6 +1293,8 @@
     return true;
   };
 
+  /* 第五天结束 */
+
   // Perform a deep comparison to check if two objects are equal.
   _.isEqual = function(a, b) {
     return eq(a, b);
@@ -1541,6 +1551,8 @@
     return '\\' + escapes[match];
   };
 
+  /* 第六天结束 */
+
   // JavaScript micro-templating, similar to John Resig's implementation.
   // Underscore templating handles arbitrary delimiters, preserves whitespace,
   // and correctly escapes quotes within interpolated code.
@@ -1680,4 +1692,6 @@
       return _;
     });
   }
+
+  /* 第七天结束 */
 }());
