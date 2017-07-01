@@ -348,6 +348,7 @@
       iteratee = cb(iteratee, context);
       _.each(obj, function(v, index, list) {
         computed = iteratee(v, index, list);
+        console.log( computed );
         if (computed > lastComputed || computed === -Infinity && result === -Infinity) {
           result = v;
           lastComputed = computed;
@@ -675,6 +676,7 @@
   _.sortedIndex = function(array, obj, iteratee, context) {
     iteratee = cb(iteratee, context, 1);
     var value = iteratee(obj);
+    console.log( iteratee );
     var low = 0, high = getLength(array);
     while (low < high) {
       var mid = Math.floor((low + high) / 2);
