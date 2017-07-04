@@ -348,7 +348,6 @@
       iteratee = cb(iteratee, context);
       _.each(obj, function(v, index, list) {
         computed = iteratee(v, index, list);
-        console.log( computed );
         if (computed > lastComputed || computed === -Infinity && result === -Infinity) {
           result = v;
           lastComputed = computed;
@@ -676,7 +675,6 @@
   _.sortedIndex = function(array, obj, iteratee, context) {
     iteratee = cb(iteratee, context, 1);
     var value = iteratee(obj);
-    console.log( iteratee );
     var low = 0, high = getLength(array);
     while (low < high) {
       var mid = Math.floor((low + high) / 2);
@@ -889,14 +887,20 @@
     var timeout, result;
 
     var later = function(context, args) {
+      console.log( 'test' );
       timeout = null;
-      if (args) result = func.apply(context, args);
+      if (args) {
+        result = func.apply(context, args);
+      }
     };
 
     var debounced = restArgs(function(args) {
-      if (timeout) clearTimeout(timeout);
+      if (timeout) {
+        clearTimeout(timeout)
+      };
       if (immediate) {
         var callNow = !timeout;
+        console.log( callNow );
         timeout = setTimeout(later, wait);
         if (callNow) result = func.apply(this, args);
       } else {
@@ -936,6 +940,7 @@
     return function() {
       var i = start;
       var result = args[start].apply(this, arguments);
+      console.log( result );
       while (i--) result = args[i].call(this, result);
       return result;
     };
