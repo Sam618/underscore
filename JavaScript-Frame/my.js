@@ -1558,4 +1558,108 @@
     // 排序后返回
     return names.sort();
   };
+
+  // 复制对象属性的内部方法
+  var createAssigner = function ( keysFunc, defaults ) {
+    return function ( obj ) {
+      var length = arguments.length;
+
+      // defaults 为真
+      if ( defaults ) {
+        obj = Object( obj );
+      }
+
+      // 传入参数的数量小于 2 或者 obj 为 null，直接返回 obj
+      if ( length < 2 || obj == null ) {
+        return obj;
+      }
+
+      var index;
+
+      for ( index = 1; index < length; index++ ) {
+        var source = arguemnts[ index ],
+            // 获取参数的属性数组，keysFunc 可能为 _.keys 或 _.allKeys 方法
+            keys = keysFunc( source ),
+            l = keys.length,
+            i;
+
+        for ( i = 0; i < l; i++ ) {
+          var key = keys[ i ];
+
+          // defaults 不为真或者当前属性的值为 undefined
+          if ( !defaults || obj[ key ] === void 0 ) {
+            // 扩展传入的第一个参数 arguments[ 0 ]
+            obj[ key ] = source[ key ];
+          }
+        }
+      }
+
+      return obj;
+    };
+  };
+
+  // 复制 source 对象中的所有属性覆盖到 destination 对象上，并且返回  destination 对象。复制是按顺序的，所以后面的对象属性会把前面的对象属性覆盖掉
+  _.extend = createAssignerr( _.allKeys );
+
+  // 类似于 extend，但只复制自己的属性覆盖到目标对象，区别在于传入的方法不同，_.allKeys 会把继承的属性也放入返回数组中
+  _.extendOwn = _.assign = createAssigner( _.keys );
+
+  // 根据传入函数的运算作为依据返回对象中的值
+  _.findKey = function ( obj, predicate, context ) {
+    // cb 方法不用多说，返回转换过后的函数
+    predicate = cb( predicate, context );
+
+    var keys = _.keys( obj ),
+        key,
+        i,
+        length = keys.length;
+
+    for ( i = 0; i < length; i++ ) {
+      key = keys[ i ];
+
+      if ( predicate( obj[ key ], key, obj ) ) {
+        return key;
+      }
+    }    
+  };
+
+  var keyInObj = function ( value, key, obj ) {
+    return key in obj;
+  };
+
+  // 返回一个 object 副本，只过滤出 keys（有效的键组成的数组）参数指定的属性值。或者接受一个判断函数，指定挑选哪个 key。
+  _.pick = restArgs( function ( obj, keys ) {
+    var result = {},
+        iteratee = keys[ 0 ],
+        i,
+        length = keys.length;
+    
+    // obj 为空，直接返回空对象
+    if ( obj == null ) {
+      return result;
+    }
+
+    // 第一个判断条件为函数（keys 数组的第一个值是函数）
+    if ( _.isFunction( iteratee ) ) {
+      if ( keys.length > 1 ) {
+        iteratee = optimizeCb( iteratee, keys[ 1 ] );
+        keys = _.allKeys( obj );
+      } else {
+        iteratee = keyInObj;
+        keys = flatten( keys, false, false );
+        obj = Object( obj );
+      }
+    }
+
+    for ( i = 0; i < length; i++ ) {
+      var key = keys[ i ],
+          value = obj[ key ];
+
+      if ( iteratee( value, key, obj ) ) {
+        result[ key ] = value;
+      }    
+    }
+
+    return result;
+  } );
 } )();
