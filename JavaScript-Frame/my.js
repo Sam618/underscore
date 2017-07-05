@@ -1623,6 +1623,7 @@
     }    
   };
 
+  // 判断 key 是否在 obj 中
   var keyInObj = function ( value, key, obj ) {
     return key in obj;
   };
@@ -1641,20 +1642,25 @@
 
     // 第一个判断条件为函数（keys 数组的第一个值是函数）
     if ( _.isFunction( iteratee ) ) {
+      // keys 数组的长度大于 1，说明 keys[ 1 ] 有可能是上下文
       if ( keys.length > 1 ) {
         iteratee = optimizeCb( iteratee, keys[ 1 ] );
-        keys = _.allKeys( obj );
-      } else {
-        iteratee = keyInObj;
-        keys = flatten( keys, false, false );
-        obj = Object( obj );
       }
+
+      keys = _.allKeys( obj );
+    } else {
+      // 当 keys 第一个参数不是数组，那就说明它是对象的键，只要判断键在不在对象中即可
+      iteratee = keyInObj;
+      // 把数组剥离为一维数组
+      keys = flatten( keys, false, false );
+      obj = Object( obj );
     }
 
     for ( i = 0; i < length; i++ ) {
       var key = keys[ i ],
           value = obj[ key ];
-
+      
+      // 运行判断条件
       if ( iteratee( value, key, obj ) ) {
         result[ key ] = value;
       }    
@@ -1662,4 +1668,62 @@
 
     return result;
   } );
+
+  // 与 _.pick 方法相反，返回一个 object 副本，只过滤出除去 keys (有效的键组成的数组)参数指定的属性值。或者接受一个判断函数，指定忽略哪个 key。
+  _.omit = restArgs( function ( obj, keys ) {
+    var iteratee = keys[ 0 ],
+        context;
+    
+    // 第一个判断条件为函数（keys 数组的第一个值是函数）
+    if ( _.isFunction( iteratee ) ) {
+      // 返回函数结果的否定值
+      iteratee = _.negate( iteratee );
+
+      if ( keys.length > 1 ) {
+        context = keys[ 1 ];
+      }
+    } else {
+      // 先通过 flatten 函数转为一维数组，之后遍历数组，在通过 new String 构造器把数组值转化为字符串
+      keys = _.map( flatten( keys, false, false ), String );
+      iteratee = function ( value, key ) {
+        // 返回不包含在 keys 中值的键值对
+        return !_.contains( keys, key );
+      };
+    }
+
+    // 最后再通过 _.pick 方法返回符合上述处理过的判断条件的对象
+    return _.pick( obj, iteratee, context );
+  } );
+
+  // 用 defaults 对象填充 object 中的 undefined 属性。并且返回这个 object。
+  _.defaults = createAssigner( _.allKeys, true );
+
+  // 创建具有给定原型的新对象，可选附加 props 作为 own 的属性。
+  _.create = function ( prototype, props ) {
+    var result = baseCreate( prototype );
+
+    if ( props ) {
+      // 只复制 props 自己的属性，继承的不会复制
+      _.extendOwn( result, props );
+    }
+
+    return result;
+  };
+
+  _.clone = function ( obj ) {
+    // 是对象就直接返回
+    if ( !_.isObject( obj ) ) {
+      return obj;
+    }
+
+    // 数组使用 slice 方法，类数组使用 _.extend 方法
+    return _.isArray( obj ) ? obj.slice() : _.extend( {}, obj );
+  };
+
+  // 用 object 作为参数来调用函数 interceptor，然后返回object。
+  _.tap = function ( obj, interceptor ) {
+    interceptor( obj );
+
+    return obj;
+  };
 } )();
