@@ -1189,6 +1189,7 @@
     var obj = Object(object);
     for (var i = 0; i < length; i++) {
       var key = keys[i];
+      console.log(attrs[key] !== obj[key]);
       if (attrs[key] !== obj[key] || !(key in obj)) return false;
     }
     return true;
@@ -1207,6 +1208,7 @@
     if (a !== a) return b !== b;
     // Exhaust primitive checks
     var type = typeof a;
+    console.log( type !== 'object' );
     if (type !== 'function' && type !== 'object' && typeof b != 'object') return false;
     return deepEq(a, b, aStack, bStack);
   };

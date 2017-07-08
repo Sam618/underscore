@@ -41,7 +41,7 @@
       return obj;
     }
 
-    // 通过 _() 函数调用的方式使用 _ 构造函数，返回通过
+    // 通过 _() 函数调用的方式使用 _ 构造函数，返回通过 new _() 构造的实例
     if ( !( this instanceof _ ) ) {
       return new _( obj );
     }
@@ -1725,5 +1725,104 @@
     interceptor( obj );
 
     return obj;
+  };
+
+  // 告诉你 properties 中的键和值是否包含在 object 中
+  _.isMatch = function ( object, attrs ) {
+    var keys = _.keys( attrs ),
+        length = keys.length;
+    
+    // object 为 null 或者 undefined
+    if ( object == null ) {
+      // attrs 存在返回 false，不存在返回 true
+      return !length;
+    }
+
+    var obj = Object( object ),
+        i;
+    
+    // 循环
+    for ( i = 0; i < length; i++ ) {
+      var key = keys[ i ];
+
+      // 先判断属性值在不在对象中，不在对象中再判断键是否在 obj 中，不在对象中说明键和值都不在对象中
+      if ( attrs[ key ] !== obj[ key ] || !( key in obj ) ) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  // 内部递归比较函数
+  var eq,
+      deepEq;
+
+  eq = function ( a, b, aStack, bStack ) {
+    // 一般类型比较，不是对象，数组函数之类的引用值
+    if ( a === b ) {
+      // 一些特殊的值会等于 0，比如 -0 还有 1e - 1000 这种很接近 0 的数
+      return a !== 0 || 1 / a === 1 / b;
+    }
+
+    // 两个比较值有一个是 null 直接返回假
+    if ( a == null || b == null ) {
+      return false;
+    }
+
+    // a 为 NaN
+    if ( a !== a ) {
+      // b 也是等于 NaN 那就返回真
+      return b !== b;
+    }
+
+    var type = typeof a;
+
+    // 不是引用类型，返回 false
+    if ( type !== 'function' && type !== 'object' && typeof b !== 'object' ) {
+      return false;
+    }
+
+    // 更深层次，引用类型的比较
+    return deepEq( a, b, aStack, bStack );
+  };
+
+  deepEq = function ( a, b, aStack, bStack ) {
+    if ( a instanceof _ ) {
+      a = a._wrapped;
+    }
+
+    if ( b instanceof _ ) {
+      b = b._wrapped;
+    }
+
+    var className = toString.call( a );
+
+    if ( className !== toString.call( b ) ) {
+      return false;
+    }
+
+    switch ( className ) {
+      case '[object RegExp]':
+      case '[object String]':
+        return '' + a === '' + b;
+
+      case '[object Number]':
+        a = +a;
+        b = +b;
+
+        if ( a !== a ) {
+          return b !== b;
+        }
+
+        return a === 0 ? 1 / a === 1 / b : a === b;
+
+      case '[object Date]':
+      case '[object Boolean]':
+        return +a === +b;
+
+      case '[object Symbol]':
+        return SymbolProto.valueOf.call( a ) === SymbolProto.valueOf.call( b );    
+    }
   };
 } )();
