@@ -43,6 +43,7 @@
     if (obj instanceof _) return obj;
     if (!(this instanceof _)) return new _(obj);
     this._wrapped = obj;
+    console.log( this._wrapped );
   };
 
   // Export the Underscore object for **Node.js**, with

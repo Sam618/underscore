@@ -1787,7 +1787,9 @@
     return deepEq( a, b, aStack, bStack );
   };
 
+  // 内部递归比较函数
   deepEq = function ( a, b, aStack, bStack ) {
+    // a，b 在 _ 的原型链上
     if ( a instanceof _ ) {
       a = a._wrapped;
     }
@@ -1796,12 +1798,15 @@
       b = b._wrapped;
     }
 
+    // 返回如 [object Object] 这种形式的字符串
     var className = toString.call( a );
 
+    // 不想等，直接返回 false
     if ( className !== toString.call( b ) ) {
       return false;
     }
 
+    // 在类型相等的前提下，进行更深层次的判断
     switch ( className ) {
       case '[object RegExp]':
       case '[object String]':
@@ -1811,18 +1816,90 @@
         a = +a;
         b = +b;
 
+        // NaN
         if ( a !== a ) {
           return b !== b;
         }
 
+        // 接近 0 的数和 0 比较有可能会相等
         return a === 0 ? 1 / a === 1 / b : a === b;
 
       case '[object Date]':
       case '[object Boolean]':
         return +a === +b;
-
+      
+      // ES6 的新类型
       case '[object Symbol]':
         return SymbolProto.valueOf.call( a ) === SymbolProto.valueOf.call( b );    
     }
+
+    // 数组比较
+    var areArrays = className === '[object Array]';
+
+    // areArrays 是对象
+    if ( !areArrays ) {
+      // 不是对象就返回 false
+      if ( typeof a != 'object' || typeof b != 'object' ) {
+        return false;
+      }
+
+      // 构造函数
+      var aCtor = a.constructor,
+          bCtor = b.constructor;
+      
+      // 不想等，比较 aCtor 和 bCtor 是不是构造函数本身，有一个不是构造函数本身，继续比较 a 或者 b 是不是实例
+      if ( aCtor !== bCtor && !( _.isFunction( aCtor ) && aCtor instanceof aCtor && _.isFunction( bCtor ) && bCtor instanceof bCtor ) && ( 'constructor' in a && 'constructor' in b ) ) {
+        return false;
+      }
+    }
+    
+    aStack = aStack || [];
+    bStack = bStack || [];
+
+    var length = aStack.length;
+
+    while ( length-- ) {
+      if ( aStack[ length ] === a ) {
+        return bStack[ length ] === b;
+      }
+    }
+
+    aStack.push( a );
+    bStack.push( b );
+
+    if ( areArrays ) {
+      length = a.length;
+
+      if ( length !== b.length ) {
+        return false;
+      } 
+
+      while ( length-- ) {
+        if ( !eq( a[ length ], b[ length ], aStack, bStack ) ) {
+          return false;
+        }
+      }
+    } else {
+      var keys = _.keys( a ),
+          key,
+          length = keys.length;
+
+      if ( _.keys( b ).length !== length ) {
+        return false;
+      }
+
+      while ( length-- ) {
+        key = keys[ length ];
+
+        if ( !( _.has( b, key ) && eq( a[ key ], b[ key ], aStack, bStack ) ) ) {
+          return false;
+        }
+      }
+    }
+
+    aStack.pop();
+    bStack.pop();
+
+    return true;
   };
 } )();
