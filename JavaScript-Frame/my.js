@@ -1847,38 +1847,50 @@
       var aCtor = a.constructor,
           bCtor = b.constructor;
       
-      // 不想等，比较 aCtor 和 bCtor 是不是构造函数本身，有一个不是构造函数本身，继续比较 a 或者 b 是不是实例
+      // a 和 b 的构造函数不相等，比较 aCtor 和 bCtor 是不是构造函数本身，有一个不是构造函数本身，继续比较
+      // 通过构造函数来判断 a 和 b 是否相同
+      // 但是，如果 a 和 b 的构造函数不同
+      // 也并不一定 a 和 b 就是 unequal
+      // 比如 a 和 b 在不同的 iframes 中！
       if ( aCtor !== bCtor && !( _.isFunction( aCtor ) && aCtor instanceof aCtor && _.isFunction( bCtor ) && bCtor instanceof bCtor ) && ( 'constructor' in a && 'constructor' in b ) ) {
         return false;
       }
     }
     
+    // 第一次执行没有传入，之后递归传入
     aStack = aStack || [];
     bStack = bStack || [];
 
     var length = aStack.length;
 
     while ( length-- ) {
+      // 历史记录里有自身，就查看另一个比对值是否如此
       if ( aStack[ length ] === a ) {
         return bStack[ length ] === b;
       }
     }
 
+    // 放入历史记录
     aStack.push( a );
     bStack.push( b );
 
+    // 是数组
     if ( areArrays ) {
       length = a.length;
 
+      // a 和 b 长度不等，那肯定不相等
       if ( length !== b.length ) {
         return false;
       } 
 
+      // 一个个递归比较
       while ( length-- ) {
         if ( !eq( a[ length ], b[ length ], aStack, bStack ) ) {
           return false;
         }
       }
+
+    // 是对象  
     } else {
       var keys = _.keys( a ),
           key,
@@ -1897,9 +1909,87 @@
       }
     }
 
+    // 递归执行完毕后，一个个从历史记录里删除
     aStack.pop();
     bStack.pop();
 
     return true;
   };
+
+  // 比较
+  _.isEqual = function ( a, b ) {
+    return eq( a, b );
+  };
+
+  // 是否为空
+  _.isEmpty = function ( obj ) {
+    if ( obj == null ) {
+      return true;
+    }
+
+    // 类数组，比较长度
+    if ( isArrayLike( obj ) && ( _.isArray( obj ) || _.isString(  obj ) || _.isArguments( obj ) ) ) {
+      return obj.length === 0;
+    }
+
+    // 对象比较它键数组长度
+    return _.keys( obj ).length === 0;
+  };
+
+  // 是不是元素节点
+  _.isElement = function ( obj ) {
+    // nodeType 节点属性为 1 表示为一个元素
+    return !!( obj && obj.nodeType === 1 );
+  };
+
+  // 判断数组
+  _.isArray = nativeIsArray || function ( obj ) {
+    return toString.call( obj ) === '[object Array]';
+  };
+
+  // 判断对象
+  _.isObject = function ( obj ) {
+    var type = typeof obj;
+
+    // 类型是函数，或者为对象，并且不是 null
+    return type = 'function' || type === 'object' && !!obj;
+  };
+
+  // 常用类型判断
+  _.each( [ 
+    'Arguments',
+    'Function',
+    'String',
+    'Number',
+    'Date',
+    'RegExp',
+    'Error',
+    'Symbol',
+    'Map',
+    'WeakMap',
+    'Set',
+    'WeakSet',
+   ], function ( name ) {
+     _[ 'is' + name ] = function ( obj ) {
+       return toString.call( obj ) === 'object ' + name + ']';
+     };
+   } );
+
+   // 函数的 arguments 有个 callee 属性，并且如果用 Object.prototype.toString 去判断 arguments 会返回 [object Arguments]
+   if ( !_.isArguments( arguments ) ) {
+    _.isArguments = function ( obj ) {
+      return _.has( obj, 'callee' );
+    };
+   }
+
+   var nodelist = root.document && root.document.childNodes;
+
+   // // typeof 检测正则表达式不为 'function'，且 typeof 检测 Int8Array 不为 'object'，且 document 对象存在
+   if ( typeof /./ != 'function' && typeof Int8Array != 'object' && typeof nodeList != 'function' ) {
+    // || false 是为了解决 IE8 & 11 下的一个诡异问题（有时 typeof dom 元素结果是 'function'，|| false 竟然能解决），见：
+    // https://github.com/jashkenas/underscore/issues/1621
+    _.isFunction = function ( obj ) {
+      return typeof obj == 'function' || false;
+    };
+   }
 } )();
