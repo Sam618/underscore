@@ -1969,27 +1969,88 @@
     'WeakMap',
     'Set',
     'WeakSet',
-   ], function ( name ) {
-     _[ 'is' + name ] = function ( obj ) {
-       return toString.call( obj ) === 'object ' + name + ']';
-     };
-   } );
+  ], function ( name ) {
+    _[ 'is' + name ] = function ( obj ) {
+      return toString.call( obj ) === 'object ' + name + ']';
+    };
+  } );
 
-   // 函数的 arguments 有个 callee 属性，并且如果用 Object.prototype.toString 去判断 arguments 会返回 [object Arguments]
-   if ( !_.isArguments( arguments ) ) {
+  // 函数的 arguments 有个 callee 属性，并且如果用 Object.prototype.toString 去判断 arguments 会返回 [object Arguments]
+  if ( !_.isArguments( arguments ) ) {
     _.isArguments = function ( obj ) {
       return _.has( obj, 'callee' );
     };
-   }
+  }
 
-   var nodelist = root.document && root.document.childNodes;
+  var nodelist = root.document && root.document.childNodes;
 
-   // // typeof 检测正则表达式不为 'function'，且 typeof 检测 Int8Array 不为 'object'，且 document 对象存在
-   if ( typeof /./ != 'function' && typeof Int8Array != 'object' && typeof nodeList != 'function' ) {
-    // || false 是为了解决 IE8 & 11 下的一个诡异问题（有时 typeof dom 元素结果是 'function'，|| false 竟然能解决），见：
-    // https://github.com/jashkenas/underscore/issues/1621
+  // // typeof 检测正则表达式不为 'function'，且 typeof 检测 Int8Array 不为 'object'，且 document 对象存在
+  if ( typeof /./ != 'function' && typeof Int8Array != 'object' && typeof nodeList != 'function' ) {
+  // || false 是为了解决 IE8 & 11 下的一个诡异问题（有时 typeof dom 元素结果是 'function'，|| false 竟然能解决），见：
+  // https://github.com/jashkenas/underscore/issues/1621
     _.isFunction = function ( obj ) {
       return typeof obj == 'function' || false;
     };
-   }
+  }
+
+  // 判断是否在数字边界内
+  _.isFinite = function ( obj ) {
+  // 不是 symbol 类型，利用全局函数 isFinite 判断在数字边界中，不是 NaN 的数字，返回真
+    return !_.isSymbol( obj ) && isFinite( obj ) && !isNaN( parseFloat( obj ) );
+  };
+
+  // 判断 NaN
+  _.isNaN = function ( obj ) {
+    return _.isNumber( obj ) && isNaN( obj );
+  };
+
+   // 判断 Bool 值
+  _.isBoolean = function ( obj ) {
+  // 只要是布尔类型
+    return obj === true || obj === false || toString.call( obj ) === '[object Boolean]';
+  };
+
+   // 判断 undefined
+  _.isUndefined = function ( obj ) {
+  // void 0 返回 undefined，而 undefined 可以被赋值
+    return obj === void 0;
+  };
+
+  // 
+  _.has = function ( obj, path ) {
+    // 对象
+    if ( !_.isArray( path ) ) {
+      return obj != null && hasOwnProperty.call( obj, path );
+    }
+
+    // 数组
+    var length = path.length,
+        i;
+    
+    // 数组里面为路径
+    for ( i = 0; i < length; i++ ) {
+      var key = path[ i ];
+
+      if ( obj == null || !hasOwnProperty.call(  obj, key) ) {
+        return false;
+      }
+
+      // 一层层剥离路径
+      obj = obj[ key ];
+    }
+
+    return !!length;
+  };
+
+  // 实用功能
+
+  // 放弃 Underscore 的控制变量 "_"。返回 Underscore 对象的引用。
+  _.noConfilct = function () {
+    root._ = previousUnderscore;
+
+    // this 是 _
+    return this;
+  };
+
+  
 } )();
