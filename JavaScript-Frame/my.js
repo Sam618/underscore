@@ -2278,6 +2278,7 @@
     
     source += "';\n";
 
+    // 可以在 with 作用域中直接使用对象的属性
     if ( !settings.variable ) {
       source = 'with(obj||{}){\n' + source + '}\n';
     }
@@ -2303,4 +2304,85 @@
 
     return template;
   };
+
+  // 返回一个封装的对象。在封装的对象上调用方法会返回封装的对象本身, 直道 value 方法调用为止
+  _.chain = function ( obj ) {
+    var instance = _( obj );
+
+    instance._chain = true;
+
+    return instance;
+  };
+
+  // 帮助链式调用
+  var chainResult = function ( instance, obj ) {
+    return instance._chain ? _( obj ).chain() : obj;
+  };
+
+  _.mixin = function ( obj ) {
+    _.each( _.functions( obj ), function ( name ) {
+      var objName = obj[ name ],
+          func = _[ name ] = objName; 
+
+      _.prototype[ name ] = function () {
+        var args = [ this._wrapped ];
+
+        push.apply( args, arguments );
+
+        return chainResult( this, func.apply( _, args ) );
+      };
+    } );
+
+    return _;
+  };
+
+  _.mixin( _ );
+
+  _.each( [
+    'pop',
+    'push',
+    'reverse',
+    'shift',
+    'sort',
+    'splice',
+    'unshift'
+  ], function ( name ) {
+    var method = ArrayProto[ name ];
+
+    _.prototype[ name ] = function () {
+      var obj = this._wrapped;
+
+      method.apply( obj, arguments );
+
+      if ( ( name === 'shift' || name === 'splice' ) && obj.length === 0 ) {
+        delete obj[ 0 ];
+      }
+
+      return chainResult( this, obj );
+    };
+  } );
+
+  _.each( [ 'concat', 'join', 'slice' ], function ( name ) {
+    var method = ArrayProto[ name ];
+
+    _.prototype[ name ] = function () {
+      return chainResult( this, method.apply( this._wrapped, arguments ) );
+    };
+  } );
+
+  _.prototype.value = function () {
+    return this._wrapped;
+  };
+
+  _.prototype.valueOf = _.prototype.toJSON = _.prototype.value;
+
+  _.prototype.toString = function () {
+    return String( this._wrapped );
+  };
+
+  if ( typeof define == 'function' && define.amd ) {
+    define( 'underscore', [], function () {
+      return _;
+    } )
+  }
 } )();
