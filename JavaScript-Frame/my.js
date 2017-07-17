@@ -2052,5 +2052,255 @@
     return this;
   };
 
+  // 返回与传入参数相等的值
+  _.indentity = function ( value ) {
+    return value;
+  };
+
+  // 创建一个函数，这个函数返回传入参数相等的值
+  _.constant = function ( value ) {
+    return function () {
+      return value;
+    };
+  };
+
+  // 函数没有明确返回值，就会返回 undefined
+  _.noop = function () {};
+
   
+  // _.property 返回一个函数，这个函数返回任何传入的对象的 key 属性
+  // key 为不是数组就使用 shallowProperty 函数
+  // key 为类数组使用 deepGet 函数
+  _.property = function ( path ) {
+    if ( !_.isArray( path ) ) {
+      return shallowProperty( path );
+    }
+
+    return function ( obj ) {
+      return deepGet( obj, path );
+    };
+  };
+
+  // 创建一个函数，函数返回创建时传入的参数的值
+  _.propertyOf = function ( obj ) {
+    if ( obj == null ) {
+      return function () {};
+    }
+
+    return function ( path ) {
+      return !_.isArray( path ) ? obj[ path ] : deepGet( obj, path );
+    };
+  };
+
+  // 返回一个断言函数，这个函数会给你一个断言可以用来辨别给定的对象是否匹配 attrs 指定键/值属性
+  _.matcher = _.matches = function ( attrs ) {
+    // 去掉继承属性
+    attrs = _.extendOwn( {}, attrs );
+
+    // 返回一个函数，这个函数会返回 attrs 是不是在传入参数中的 Bool 值
+    return function ( obj ) {
+      return _.isMatch( obj, attrs );
+    };
+  };
+
+  // 把一个函数执行 n 次，结束后返回 n 次执行的结果集
+  _.times = function ( n, iteratee, context ) {
+    var accum = Array( Math.max( 0, n ) ),
+        i;
+
+    iteratee = optimizeCb( iteratee, context, 1 );
+
+    for ( i = 0; i < n; i++ ) {
+      accum[ i ] = iteratee( i );
+    }
+
+    return accum;
+  };
+
+  // 返回一个 min 和 max 之间的随机整数。如果你只传递一个参数，那么将返回 0 和这个参数之间的整数。
+  _.random = function ( min, max ) {
+    if ( max == null ) {
+      max = min;
+      min = 0;
+    }
+
+    // max - min 表示相差值，加 1 是因为有小数，通过 Math.floor 可以变为整数
+    return min + Math.floor( Math.random() * ( max - min + 1 ) );
+  };
+
+  // 返回当前时间
+  _.now = Date.now || function () {
+    return new Date().getTime();
+  };
+
+  // HTML 实体列表
+  var escapeMap = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#x27;',
+    '`': '&#x60;',
+  },  
+      // 键值对转换
+      unescapeMap = _.invert( escapeMap );
+
+  var createEscaper = function ( map ) {
+    // 正则替换函数
+    var escaper = function ( match ) {
+      // 返回对应的 HTML 实体字符或者特殊字符
+      return map[ match ];
+    };
+
+    // 这种形式：'(?:&amp;|&lt;\&gt;|&quot;|&#x27;|&#x60;)'
+    var source = '(?:' + _.keys( map ).join( '|' ) + ')',
+        testRegExp = RegExp( source ),
+        replaceRegExp = RegExp( source, 'g' );
+    
+    return function ( string ) {
+      string = string == null ? '' : '' + string;
+
+      return testRegExp.test( string ) ? string.replace( replaceRegExp, escaper ) : string;
+    };
+  };
+
+  // 转义 HTML 字符串，替换 &, <, >, ", ', 和 /字符。
+  _.escape = createEscaper( escapeMap );
+
+  // 和 escape 相反。转义 HTML 字符串，替换 &, &lt;, &gt;, &quot;, &#96;, 和 &#x2F; 字符。
+  _.unescape = createEscaper( unescapeMap );
+
+  // 如果指定的 property 的值是一个函数，那么将在 object 上下文内调用它；否则，返回它。如果提供默认值，并且属性不存在，那么默认值将被返回。如果设置 defaultValue 是一个函数，它的结果将被返回。
+  _.result = function ( obj, path, fallback ) {
+    var length = path.length;
+
+    // 长度为 0
+    if ( !length ) {
+      // 为函数，就执行它；否则返回 fallback
+      return _.isFunction( fallback ) ? fallback.call( obj ) : fallback;
+    }
+
+    var i;
+
+    // path 是数组
+    for ( i = 0; i < length; i++ ) {
+      var prop = obj == null ? void 0 : obj[ path[ i ] ];
+
+      // prop 是 undefined，这次循环执行完毕就退出
+      if ( prop === void 0 ) {
+        prop = fallback;
+        i = length;
+      }
+
+      // 是函数，直接执行，否则返回值
+      obj = _.isFunction( prop ) ? prop.call( obj ) : prop;
+    }
+
+    return obj;
+  };
+
+  // 为需要的客户端模型或 DOM 元素生成一个全局唯一的 id
+  var idCounter = 0;
+
+  _.uniqueId = function ( prefix ) {
+    var id = ++idCounter + '';
+
+    return prefix ? prefix + id : id;
+  };
+
+  // 默认模板使用 EJS 模板替换符
+  _.templateSettings = {
+    evaluate: /<%([\s\S]+?)%>/g,
+    interpolate: /<%=([\s\S]+?)%>/g,
+    escape: /<%-([\s\S]+?)%>/g,
+  };
+  
+  // 下面的正则永远不会匹配
+  var noMatch = /(.)^/;
+
+  // 字符转义
+  var escapes = {
+    "'": "'",
+    '\\': '\\',
+    '\r': 'r',
+    '\n': 'n',
+    '\u2028': 'u2028',
+    '\u2029': 'u2029',
+  },
+      escapeRegExp = /\\|'|\r|\n|\u2028|\u2029/g;
+
+  var  escapeChar = function ( match ) {
+    // new RegExp 创建正则需要把 \ 变成 \\
+    return '\\' + escapes[ match ];
+  }
+
+  // 将 JavaScript 模板编译为可以用于页面呈现的函数
+  _.template = function ( text, settings, oldSettings ) {
+    // settings 不存在并且 oldSettings 存在
+    if ( !settings && oldSettings ) {
+      settings = oldSettings;
+    }
+
+    // 扩充空对象
+    settings = _.defaults( {}, settings, _.templateSettings );
+
+    // 使用正则构造函数创建，并用 join 连接数组；source 方法可以把正则中的表达式提取出来，比如 /<%([\s\S]+?)%>/g.source 是 "<%([\s\S]+?)%>"
+    var matcher = RegExp( [
+      ( settings.escape || noMatch ).source,
+      ( settins.interpolate || noMatch ).source,
+      ( settings.evaluate || noMatch ).source,
+    ].join( '|' ) + '|$', 'g' ),
+        index = 0,
+        source = "__p+='";
+    
+    text.replace( matcher, function ( match, escape, interpolate, evaluate, offset ) {
+      // offset 是匹配位置
+      // 匹配字符串（不是模板），并替换实体字符
+      source += text.slice( index, offset ).replace( escapeRegExp, escapeChar );
+      // 刚刚匹配的位置加上匹配的字符串长度，就是下一次替换的内容位置
+      index = offset + match.length;
+
+      // 转义
+      if ( escape ) {
+        source += "'+\n((__t=(" + escape + "))==null?'':_.escape(__t))+\n'";
+
+      // 插值
+      } else if ( interpolate ) {
+        source += "'+\n((__t=(" + interpolate + "))==null?'':__t)+\n'";
+
+      // 计算  
+      } else if ( evaluate ) {
+        source += "';\n" + evaluate + "\n__p+='";
+      }
+
+      return match;
+    } );
+    
+    source += "';\n";
+
+    if ( !settings.variable ) {
+      source = 'with(obj||{}){\n' + source + '}\n';
+    }
+
+    source = "var __t,__p='',__j=Array.prototype.join," + "print=function(){__p+=__j.call(arguments,'');};\n" + source + 'return __p;\n';
+
+    var render;
+
+    try {
+      render = new Function( settings.variable || 'obj', '_', source );
+    } catch( e ) {
+      e.source = source;
+      throw e;
+    }
+
+    var template = function ( data ) {
+      return render.call( this, data, _ );
+    };
+
+    var argument = settings.variable || 'obj';
+
+    template.source = 'function(' + argument + '){\n' + source + '}';
+
+    return template;
+  };
 } )();

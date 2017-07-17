@@ -1581,9 +1581,15 @@
     var index = 0;
     var source = "__p+='";
     text.replace(matcher, function(match, escape, interpolate, evaluate, offset) {
+      // offset 是匹配开始位置
       source += text.slice(index, offset).replace(escapeRegExp, escapeChar);
       index = offset + match.length;
 
+      console.log( match );
+      console.log( escape );
+      console.log( interpolate );
+      console.log( evaluate );
+      console.log( offset );
       if (escape) {
         source += "'+\n((__t=(" + escape + "))==null?'':_.escape(__t))+\n'";
       } else if (interpolate) {
@@ -1591,7 +1597,7 @@
       } else if (evaluate) {
         source += "';\n" + evaluate + "\n__p+='";
       }
-
+      
       // Adobe VMs need the match returned to produce the correct offset.
       return match;
     });
